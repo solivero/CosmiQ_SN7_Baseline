@@ -2,6 +2,23 @@
 <img src="docs/figs/header.png" height="160" alt="Header">
 </p>
 
+
+### Additional steps
+
+Bind `/thesis` dir to `/app`
+
+`docker --mount type=bind,src=/home/oliver/thesis/models/End-to-end-CD-for-VHR-satellite-image,dst=/app/`
+
+if VGG fails download
+
+`docker cp ~/Downloads/vgg16-397923af.pth sn7_gpu0:/root/.cache/torch/hub/checkpoints`
+
+make xdxd model
+
+`cat weight_split/* > xdxd_final.pth`
+
+
+
 #  The SpaceNet 7 Baseline Algorithm 
 
 The [SpaceNet 7](https://spacenet.ai/sn7-challenge/) dataset contains ~100 data cubes of monthly Planet 4 meter resolution satellite imagery taken over a two year time span, with attendant building footprint labels.  The goal of the SpaceNet 7 Challenge is to identify and track building footprints and unique identifiers through the multiple seasons and conditions of the dataset.  
@@ -64,6 +81,9 @@ III. Train (see `notebooks/sn7_baseline.ipynb`, or use the pretrained weights in
 -------
 IV. Infer (see `notebooks/sn7_baseline.ipynb`)
 
+    cd /path_to_baseline/src
+    time python sn7_baseline_infer.py
+    
 Output will consist of:
 
 1. Inference masks:
