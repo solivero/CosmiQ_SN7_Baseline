@@ -12,18 +12,82 @@ import geopandas as gpd
 import multiprocessing
 import pandas as pd
 import numpy as np
-import skimage.io
+import skimage.io as ski
 import tqdm
 import glob
 import math
 import gdal
 import time
 import os
+import cv2
 
 import solaris as sol
 from solaris.utils.core import _check_gdf_load
 from solaris.raster.image import create_multiband_geotiff 
 
+def score(pred_cm_dir, label_cm_dir):
+    pred_cm_list = sorted([z for z in os.listdir(pred_cm_dir) if z.endswith('.tif')])
+    def score_file(pred_cm_file):
+        pred_im = cv2.imread(os.path.join(pred_cm_dir, pred_cm_file), cv2.IMREAD_GRAYSCALE)
+        label_im = cv2.imread(os.path.join(label_cm_dir, pred_cm_file), cv2.IMREAD_GRAYSCALE)
+        print(os.path.exists(os.path.join(pred_cm_dir, pred_cm_file)), os.path.exists(os.path.join(label_cm_dir, pred_cm_file)))
+        label_im_cat = np.zeros(pred_im.shape, dtype=np.int8)
+        label_im_cat[label_im == 255] = 1
+        pred_im_cat = np.zeros(label_im.shape)
+        pred_im_cat[pred_im == 255] = 1
+        return sol.eval.pixel.f1(label_im_cat, pred_im_cat, verbose=True)
+    scores = np.array([score_file(pred_cm_file) for pred_cm_file in pred_cm_list])
+    print(scores.shape)
+    print(np.mean(scores, axis=0))
+    return scores
+
+def group_pred(pred_top_dir):
+    raw_name = 'raw/'
+    grouped_name = 'grouped/'
+    im_list = sorted([z for z in os.listdir(os.path.join(pred_top_dir, raw_name)) if z.endswith('.tif')])
+    df = pd.DataFrame({'image': im_list})
+    roots = [z.split('mosaic_')[-1].split('.tif')[0] for z in df['image'].values]
+    df['root'] = roots
+    # copy files
+    for idx, row in df.iterrows():
+        in_path_tmp = os.path.join(pred_top_dir, raw_name, row['image'])
+        out_dir_tmp = os.path.join(pred_top_dir, grouped_name, row['root'], 'masks')
+        os.makedirs(out_dir_tmp, exist_ok=True)
+        cmd = 'cp ' + in_path_tmp + ' ' + out_dir_tmp
+        print("cmd:", cmd)
+        os.system(cmd)   
+
+def change_map_from_masks(mask_dir, cm_out_dir, udm_dir=None, months=1):
+    if not os.path.exists(cm_out_dir):
+        os.mkdir(cm_out_dir)
+    mask_files = sorted([f
+                for f in os.listdir(os.path.join(mask_dir))
+                if os.path.exists(os.path.join(mask_dir, f))])
+    print(mask_files)
+    first = True
+    for f1, f2 in zip(mask_files, mask_files[months:]):
+        im1 = np.array(cv2.imread(os.path.join(mask_dir, f1), cv2.IMREAD_LOAD_GDAL), dtype=np.uint8)
+        im2 = np.array(cv2.imread(os.path.join(mask_dir, f2), cv2.IMREAD_LOAD_GDAL), dtype=np.uint8)
+        #cm = cv2.bitwise_xor(im1, im2)
+        cm = cv2.subtract(im1, im2)
+        cm[cm < 128] = 0
+        cm[cm >= 128] = 255
+        if first:
+            print(im1)
+            print(im2)
+            print(cm)
+            first = False
+        if udm_dir:
+            for filename in (f1, f2):
+                udm_path = os.path.join(udm_dir, filename.replace('Buildings', 'UDM'))
+                if os.path.exists(udm_path):
+                    udm = cv2.imread(udm_path, cv2.IMREAD_GRAYSCALE)
+                    cm = cv2.bitwise_and(cm, cv2.bitwise_not(udm))
+        date2 = f2.split('.')[0].split('global_monthly_')[-1]
+        date1 = f1.split('.')[0].split('global_monthly_')[-1][:7]
+        cm_name = f'global_monthly_{date1}-{date2}.tif'.replace('_Buildings', '')
+        output_path_mask = os.path.join(cm_out_dir, cm_name)
+        cv2.imwrite(output_path_mask, cm)
 
 def map_wrapper(x):
     '''For multi-threading'''
