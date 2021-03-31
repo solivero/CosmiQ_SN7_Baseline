@@ -69,9 +69,11 @@ def change_map_from_masks(mask_dir, cm_out_dir, udm_dir=None, months=1):
         im1 = np.array(cv2.imread(os.path.join(mask_dir, f1), cv2.IMREAD_LOAD_GDAL), dtype=np.uint8)
         im2 = np.array(cv2.imread(os.path.join(mask_dir, f2), cv2.IMREAD_LOAD_GDAL), dtype=np.uint8)
         #cm = cv2.bitwise_xor(im1, im2)
-        cm = cv2.subtract(im1, im2)
-        cm[cm < 128] = 0
-        cm[cm >= 128] = 255
+        #cm = cv2.subtract(im2, im1)
+        cm = np.abs(im2.astype(np.int8) - im1.astype(np.int8)) # 255 -> -1 in type conversion.
+        changes = cm == 1
+        cm = np.zeros(im1.shape, dtype=np.uint8)
+        cm[changes] = 255
         if first:
             print(im1)
             print(im2)

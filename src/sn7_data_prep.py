@@ -97,7 +97,7 @@ with multiprocessing.Pool(n_threads) as pool:
 
 # In[50]:
 
-N_MONTHS = 3
+N_MONTHS = 6
 for aoi in aois:
     out_dir_cd_map = os.path.join(root_dir, 'train', aoi, 'change_maps/')
     mask_dir = os.path.join(root_dir, 'train', aoi, 'masks/')
