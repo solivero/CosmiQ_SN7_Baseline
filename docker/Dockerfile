@@ -82,7 +82,7 @@ RUN source activate solaris && python -m ipykernel.kernelspec \
     --name solaris --display-name solaris
 
 # ensure solaris is activated
-# RUN conda activate solaris
+RUN conda activate solaris
 
 # Need imagecodecs for Planet files
 RUN pip install imagecodecs
