@@ -12,10 +12,7 @@ ARG solaris_branch='master'
 # prep apt-get and cudnn
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	    apt-utils \
-            libcudnn7=$CUDNN_VERSION-1+cuda9.0 \
-            libcudnn7-dev=$CUDNN_VERSION-1+cuda9.0 && \
-    apt-mark hold libcudnn7 && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # install requirements
 RUN apt-get update \
@@ -66,20 +63,20 @@ WORKDIR /tmp/
 RUN git clone https://github.com/cosmiq/solaris.git && \
     cd solaris && \
     git checkout ${solaris_branch} && \
-    conda env create -f environment-gpu.yml
+    conda env create -f environment.yml
 ENV PATH /opt/conda/envs/solaris/bin:$PATH
 
 RUN cd solaris && pip install .
 
 # install various conda dependencies into the space_base environment
-RUN conda install -n solaris \
-                     jupyter \
-                     jupyterlab \
-                     ipykernel
+RUN conda install -n solaris
+                     #jupyter \
+                     #jupyterlab \
+                     #ipykernel
 
 # add a jupyter kernel for the conda environment in case it's wanted
-RUN source activate solaris && python -m ipykernel.kernelspec \
-    --name solaris --display-name solaris
+#RUN source activate solaris && python -m ipykernel.kernelspec \
+    #--name solaris --display-name solaris
 
 # ensure solaris is activated
 RUN conda activate solaris
