@@ -116,7 +116,8 @@ os.makedirs(out_dir, exist_ok=True)
 
 for pop in pops: 
     d = os.path.join(root_dir, pop)
-    outpath = os.path.join(out_dir, 'sn7_baseline_' + pop + '_df.csv')
+    direct_class_outpath = os.path.join(out_dir, 'sn7_baseline_' + pop + '_direct_class.csv')
+    post_class_outpath = os.path.join(out_dir, 'sn7_baseline_' + pop + '_post_class.csv')
     im_list, im1_list, im2_list, mask_list, cm_list = [], [], [], [], []
     subdirs = sorted([f for f in os.listdir(d) if os.path.isdir(os.path.join(d, f))])
     for subdir in subdirs:
@@ -160,7 +161,16 @@ for pop in pops:
         #display(df.head())
     elif pop == 'test_public':
         df = pd.DataFrame({'image1': im1_list})
-    df.to_csv(outpath, index=False)
+    df.to_csv(direct_class_outpath, index=False)
+    print(pop, "len df:", len(df))
+    print("output csv:", outpath)
+    if pop == 'train':
+        #df = pd.DataFrame({'image': im_list, 'label': mask_list})
+        df = pd.DataFrame({'image': im_list, 'label': mask_list})
+        #display(df.head())
+    elif pop == 'test_public':
+        df = pd.DataFrame({'image': im_list})
+    df.to_csv(post_class_outpath, index=False)
     print(pop, "len df:", len(df))
     print("output csv:", outpath)
 
