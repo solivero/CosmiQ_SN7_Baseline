@@ -130,7 +130,7 @@ for pop in pops:
                       for f in sorted(os.listdir(os.path.join(d, subdir, 'images_masked')))
                       if f.endswith('.tif') and os.path.exists(os.path.join(d, subdir, 'masks', f.split('.')[0] + '_Buildings.tif'))]
             mask_list.extend(mask_files)
-            im_list = im_files
+            im_list.extend(im_files)
             im1_files = im_files[:-N_MONTHS]
             im2_files = im_files[N_MONTHS:]
             im1_list.extend(im1_files)
@@ -163,7 +163,7 @@ for pop in pops:
         df = pd.DataFrame({'image1': im1_list})
     df.to_csv(direct_class_outpath, index=False)
     print(pop, "len df:", len(df))
-    print("output csv:", outpath)
+    print("output csv:", direct_class_outpath)
     if pop == 'train':
         #df = pd.DataFrame({'image': im_list, 'label': mask_list})
         df = pd.DataFrame({'image': im_list, 'label': mask_list})
@@ -172,7 +172,7 @@ for pop in pops:
         df = pd.DataFrame({'image': im_list})
     df.to_csv(post_class_outpath, index=False)
     print(pop, "len df:", len(df))
-    print("output csv:", outpath)
+    print("output csv:", post_class_outpath)
 
 
 # --------

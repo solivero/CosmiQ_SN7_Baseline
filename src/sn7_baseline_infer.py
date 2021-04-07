@@ -1,5 +1,6 @@
 import solaris as sol
 import os
+import numpy as np
 from sn7_baseline_postproc_funcs import change_map_from_masks, group_pred, score
 config_path = '../yml/sn7_baseline_infer.yml'
 config = sol.utils.config.parse(config_path)
@@ -15,7 +16,22 @@ inferer = sol.nets.infer.Inferer(config)
 #inferer()
 
 inference_top_dir = os.path.dirname(output_dir)
-cm_dir = os.path.join(inference_top_dir, 'change_maps')
-#change_map_from_masks(output_dir, cm_dir)
 #group_pred(inference_top_dir)
-score(cm_dir, '/app/spacenet7/train/L15-0331E-1257N_1327_3160_13/change_maps')
+grouped_dir = os.path.join(inference_top_dir, 'grouped')
+score_lists = []
+aois = os.listdir(grouped_dir)
+for aoi in aois:
+    print(aoi)
+    aoi_path = os.path.join(grouped_dir, aoi)
+    cm_path = os.path.join(aoi_path, 'change_maps')
+    mask_path = os.path.join(aoi_path, 'masks')
+    change_map_from_masks(mask_path, cm_path, months=6)
+    label_cm_path = os.path.join('/app/spacenet7/train/', aoi, 'change_maps')
+    print(label_cm_path)
+    scores = score(cm_path, label_cm_path)
+    score_lists.append(scores)
+    print("Mean f1 score AOI", aoi, np.mean(scores))
+
+flattened_scores = np.vstack(score_lists)
+print(flattened_scores.shape)
+print("Mean f1, presicion and recall score all AOIs", np.mean(flattened_scores, axis=0))

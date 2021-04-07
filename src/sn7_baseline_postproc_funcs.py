@@ -25,17 +25,20 @@ import solaris as sol
 from solaris.utils.core import _check_gdf_load
 from solaris.raster.image import create_multiband_geotiff 
 
-def score(pred_cm_dir, label_cm_dir):
+def score(pred_cm_dir, label_cm_dir, verbose=False):
     pred_cm_list = sorted([z for z in os.listdir(pred_cm_dir) if z.endswith('.tif')])
     def score_file(pred_cm_file):
         pred_im = cv2.imread(os.path.join(pred_cm_dir, pred_cm_file), cv2.IMREAD_GRAYSCALE)
+        pred_im = cv2.resize(pred_im, (1024, 1024))
         label_im = cv2.imread(os.path.join(label_cm_dir, pred_cm_file), cv2.IMREAD_GRAYSCALE)
-        print(os.path.exists(os.path.join(pred_cm_dir, pred_cm_file)), os.path.exists(os.path.join(label_cm_dir, pred_cm_file)))
+        label_im = cv2.resize(label_im, (1024, 1024))
+        if verbose:
+            print(os.path.exists(os.path.join(pred_cm_dir, pred_cm_file)), os.path.exists(os.path.join(label_cm_dir, pred_cm_file)))
         label_im_cat = np.zeros(pred_im.shape, dtype=np.int8)
         label_im_cat[label_im == 255] = 1
         pred_im_cat = np.zeros(label_im.shape)
         pred_im_cat[pred_im == 255] = 1
-        return sol.eval.pixel.f1(label_im_cat, pred_im_cat, verbose=True)
+        return sol.eval.pixel.f1(label_im_cat, pred_im_cat, verbose=verbose)
     scores = np.array([score_file(pred_cm_file) for pred_cm_file in pred_cm_list])
     print(scores.shape)
     print(np.mean(scores, axis=0))
@@ -63,20 +66,28 @@ def change_map_from_masks(mask_dir, cm_out_dir, udm_dir=None, months=1):
     mask_files = sorted([f
                 for f in os.listdir(os.path.join(mask_dir))
                 if os.path.exists(os.path.join(mask_dir, f))])
-    print(mask_files)
     first = True
     for f1, f2 in zip(mask_files, mask_files[months:]):
+        if first:
+            print(os.path.join(mask_dir, f1))
+            print(os.path.join(mask_dir, f2))
         im1 = np.array(cv2.imread(os.path.join(mask_dir, f1), cv2.IMREAD_LOAD_GDAL), dtype=np.uint8)
+        im1_pad = np.zeros((1024, 1024), dtype=np.uint8)
+        im1_pad[:im1.shape[0],:im1.shape[1]] = im1
         im2 = np.array(cv2.imread(os.path.join(mask_dir, f2), cv2.IMREAD_LOAD_GDAL), dtype=np.uint8)
+        im2_pad = np.zeros((1024, 1024), dtype=np.uint8)
+        im2_pad[:im2.shape[0],:im2.shape[1]] = im2
         #cm = cv2.bitwise_xor(im1, im2)
         #cm = cv2.subtract(im2, im1)
-        cm = np.abs(im2.astype(np.int8) - im1.astype(np.int8)) # 255 -> -1 in type conversion.
+        im1_pad[im1_pad > 200] = 255
+        im2_pad[im2_pad > 200] = 255
+        cm = np.abs(im2_pad.astype(np.int8) - im1_pad.astype(np.int8)) # 255 -> -1 in type conversion.
         changes = cm == 1
-        cm = np.zeros(im1.shape, dtype=np.uint8)
+        cm = np.zeros(im1_pad.shape, dtype=np.uint8)
         cm[changes] = 255
         if first:
-            print(im1)
-            print(im2)
+            print(im1_pad)
+            print(im2_pad)
             print(cm)
             first = False
         if udm_dir:
