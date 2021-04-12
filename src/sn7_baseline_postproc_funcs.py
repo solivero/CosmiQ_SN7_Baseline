@@ -95,6 +95,7 @@ def change_map_from_masks(mask_dir, cm_out_dir, udm_dir=None, months=1):
                 udm_path = os.path.join(udm_dir, filename.replace('Buildings', 'UDM'))
                 if os.path.exists(udm_path):
                     udm = cv2.imread(udm_path, cv2.IMREAD_GRAYSCALE)
+                    udm = cv2.resize(udm, (1024, 1024))
                     cm = cv2.bitwise_and(cm, cv2.bitwise_not(udm))
         date2 = f2.split('.')[0].split('global_monthly_')[-1]
         date1 = f1.split('.')[0].split('global_monthly_')[-1][:7]
