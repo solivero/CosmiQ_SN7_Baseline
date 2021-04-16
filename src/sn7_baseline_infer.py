@@ -13,10 +13,10 @@ output_dir = config['inference']['output_dir']
 os.makedirs(output_dir, exist_ok=True)
 
 inferer = sol.nets.infer.Inferer(config)
-#inferer()
+inferer()
 
 inference_top_dir = os.path.dirname(output_dir)
-#group_pred(inference_top_dir)
+group_pred(inference_top_dir)
 grouped_dir = os.path.join(inference_top_dir, 'grouped')
 score_lists = []
 aois = os.listdir(grouped_dir)
@@ -26,7 +26,7 @@ for aoi in aois:
     cm_path = os.path.join(aoi_path, 'change_maps')
     mask_path = os.path.join(aoi_path, 'masks')
     change_map_from_masks(mask_path, cm_path, months=6)
-    label_cm_path = os.path.join('/app/spacenet7/train/', aoi, 'change_maps')
+    label_cm_path = os.path.join('/media/unibap_storage3/projects/change_detection/train/', aoi, 'change_maps')
     print(label_cm_path)
     scores = score(cm_path, label_cm_path)
     score_lists.append(scores)
